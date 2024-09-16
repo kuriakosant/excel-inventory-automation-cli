@@ -70,35 +70,39 @@ def modify_values(df, min_val, max_val, case):
         print("Error: The 'Αξία' column was not found in the file. Please make sure the file has the correct format.")
         return df
     
-    selected_rows = df[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)]
+    # Exclude the last row from the selection (assuming the last row contains sums)
+    product_df = df.iloc[:-1]  # All rows except the last one (which has the sums)
+
+    # Select rows within the min/max range for column 'Αξία'
+    selected_rows = product_df[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val)]
     print(f"Selected {len(selected_rows)} rows in the range Min: {min_val}, Max: {max_val}")
-    
+
     if case == 1:  # Reduce quantity of product
         percentage = get_percentage_input("Please input the percentage to reduce the quantity of the products: ")
         rounding_choice = get_rounding_choice()
         
         # Reduce 'Ποσ.1' by the given percentage and round accordingly
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.1'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.1'
+        product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Ποσ.1'] = product_df.loc[
+            (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Ποσ.1'
         ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice)).astype(float)
 
         # Recalculate 'Αξία' as 'Ποσ.1' * 'Τιμή κόστους'
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Αξία'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
+        product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Αξία'] = product_df.loc[
+            (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val)
         ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
-    
+
     elif case == 2:  # Reduce per-unit value of product
         percentage = get_percentage_input("Please input the percentage to reduce the per-unit value of the products: ")
         rounding_choice = get_rounding_choice()
         
         # Reduce 'Τιμή κόστους' by the given percentage and round accordingly
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'
+        product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Τιμή κόστους'] = product_df.loc[
+            (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Τιμή κόστους'
         ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice)).astype(float)
 
         # Recalculate 'Αξία' as 'Ποσ.1' * 'Τιμή κόστους'
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Αξία'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
+        product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Αξία'] = product_df.loc[
+            (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val)
         ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
 
     elif case == 3:  # Reduce total value of product (both quantity and unit price)
@@ -106,20 +110,25 @@ def modify_values(df, min_val, max_val, case):
         rounding_choice = get_rounding_choice()
         
         # Reduce both 'Ποσ.1' and 'Τιμή κόστους' by the given percentage and round accordingly
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), ['Ποσ.1', 'Τιμή κόστους']] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), ['Ποσ.1', 'Τιμή κόστους']
+        product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), ['Ποσ.1', 'Τιμή κόστους']] = product_df.loc[
+            (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), ['Ποσ.1', 'Τιμή κόστους']
         ].apply(lambda row: (round_value(row['Ποσ.1'] * (1 - percentage / 100), rounding_choice),
                              round_value(row['Τιμή κόστους'] * (1 - percentage / 100), rounding_choice)), axis=1).apply(pd.Series)
 
         # Recalculate 'Αξία' as 'Ποσ.1' * 'Τιμή κόστους'
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Αξία'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
+        product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Αξία'] = product_df.loc[
+            (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val)
         ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
 
-    # Recalculate the sums of 'Ποσ.1', 'Τιμή κόστους', and 'Αξία' and place them in the last row
-    df.loc[len(df)-1, 'Ποσ.1'] = df['Ποσ.1'].sum()
-    df.loc[len(df)-1, 'Τιμή κόστους'] = df['Τιμή κόστους'].sum()
-    df.loc[len(df)-1, 'Αξία'] = df['Αξία'].sum()
+    # Recalculate the sums of 'Ποσ.1', 'Τιμή κόστους', and 'Αξία' (ignoring the last row)
+    total_pos1 = product_df['Ποσ.1'].sum()
+    total_cost = product_df['Τιμή κόστους'].sum()
+    total_value = product_df['Αξία'].sum()
+
+    # Update the last row with the recalculated sums
+    df.loc[len(df)-1, 'Ποσ.1'] = total_pos1
+    df.loc[len(df)-1, 'Τιμή κόστους'] = total_cost
+    df.loc[len(df)-1, 'Αξία'] = total_value
     
     return df
 
@@ -152,8 +161,9 @@ def main():
           "                        ")
     print("Program rules:\n"
           "                ")
-    print("1. The program will always ignore the first 8 rows and start implementing the row range selection from row 9 and on\n" 
-          "2. The program will recalculate the sum of columns F I and J in all iterations , ignoring the existing values of the original files last row\n"
+    print("1. The program will always copy  the first 8 rows of a file selected and paste them in thew new file once its created\n" 
+          "2. The program will always ignore the first 8 rows and start implementing the row range selection from row 9 and on\n" 
+          "3. The program will recalculate the sum of columns F I and J in all iterations, ignoring the existing values of the original file's last row\n"
           "(this prevents the sum calculation from including the previous sum value)\n")
     
     while True:
@@ -206,5 +216,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
