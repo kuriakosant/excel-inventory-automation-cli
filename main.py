@@ -165,10 +165,18 @@ def main():
           "                        ")
     print("Program rules:\n"
           "                ")
-    print("1. The program will always copy the first 8 rows of a file selected and paste them in the new file once it's created.\n" 
-          "2. The program will always ignore the first 8 rows and start implementing the row range selection from row 9 and on.\n" 
-          "3. The program will recalculate the sum of columns F, I, and J in all iterations, ignoring the existing values of the original file's last row.\n"
-          "(this prevents the sum calculation from including the previous sum value)\n")
+    print("IMPORTANT: For the program to work the files you input must have a strict format:\n"
+          "Your list of products must begin on Row 9 (so Row 9 should always contain the 1st product)\n"
+          "The cell in Column F of row 8 must contain the value 'Ποσ.1'\n" 
+          "The cell in Column I of row 8 must contain the value 'Ποσ.2'\n" 
+          "The cell in Column J of row 8 must contain the value 'Αξια'\n" 
+          "The program will only accept files that have this format.\n"
+          "1. The program will always ignore the first 8 rows and start implementing the row range selection from row 9 and on.\n" 
+          "2. The program will recalculate the sum of columns F, I, and J in all iterations\n"
+          "The program will always ignore the content of the files final row\n"
+          "if your final row contains a product that product will not be included in any calculations\n"
+          "(this prevents the sum calculation from including the previous sum value)\n"
+          "                ")
     
     while True:
         action = input("Please select your next action:\n 1. Choose a file\n 2. Exit:\n Selection(1/2): ")
