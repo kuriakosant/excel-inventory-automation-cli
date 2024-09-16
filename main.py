@@ -63,12 +63,12 @@ def round_value(value, rounding_choice):
     elif rounding_choice == 4:
         return round(value, 2)
 
-     #Function to modify values based on the case
+# Function to modify values based on the case
 def modify_values(df, min_val, max_val, case):
     # Check if 'Αξία' exists in the DataFrame
     if 'Αξία' not in df.columns:
         print("Error: The 'Αξία' column was not found in the file. Please make sure the file has the correct format.")
-        return df
+        return None  # Instead of returning the DataFrame, return None
 
     # Select rows within the min/max range for column 'Αξία', excluding the last row (assumed to contain the sums)
     selected_rows = df.iloc[:-1][(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)]
@@ -165,9 +165,9 @@ def main():
           "                        ")
     print("Program rules:\n"
           "                ")
-    print("1. The program will always copy  the first 8 rows of a file selected and paste them in thew new file once its created\n" 
-          "2. The program will always ignore the first 8 rows and start implementing the row range selection from row 9 and on\n" 
-          "3. The program will recalculate the sum of columns F I and J in all iterations, ignoring the existing values of the original file's last row\n"
+    print("1. The program will always copy the first 8 rows of a file selected and paste them in the new file once it's created.\n" 
+          "2. The program will always ignore the first 8 rows and start implementing the row range selection from row 9 and on.\n" 
+          "3. The program will recalculate the sum of columns F, I, and J in all iterations, ignoring the existing values of the original file's last row.\n"
           "(this prevents the sum calculation from including the previous sum value)\n")
     
     while True:
@@ -181,7 +181,7 @@ def main():
                     print(f"The file you selected is: {filename} ({os.path.getsize(filename)} bytes)")
                     next_action = input("Please select your next action:\n 1. Modify values\n 2. Exit:\n Selection(1-2): ")
                     if next_action == '1':
-                        print("You will now have to specify what rows you want to modify,\nthis is done by providing a min and a max (a range of product value) from the  columns J\n")
+                        print("You will now have to specify what rows you want to modify,\nthis is done by providing a min and a max (a range of product value) from the columns J\n")
                         min_value = get_float_input("Please input your min value (press enter for 0): ", 0.0)
                         max_value = get_float_input("Please input your max value: ")
                         print(f"Min: {min_value}, Max: {max_value}")
@@ -193,9 +193,10 @@ def main():
                             " 3. Reduce total value of product (change the value of all F and I columns in the selected rows by a percentage,)\nthis will also recalculate the J(αξια) value in all affected rows:\n "
                             " Selection(1-3): "
                         )
-                        if modification_choice in ['1', '2', '3']:
-                            modified_df = modify_values(df, min_value, max_value, int(modification_choice))
-                            
+
+                        modified_df = modify_values(df, min_value, max_value, int(modification_choice))
+                        
+                        if modified_df is not None:  # If the column 'Αξία' exists and modifications are made
                             # Get new file name
                             new_filename = input("Please select a name for your new file (just the file name, not including file type): ")
                             modified_df.to_excel(f"{new_filename}.xlsx", index=False)
@@ -210,6 +211,9 @@ def main():
                             if another_file == 'n':
                                 print("Exiting...")
                                 return  # Exit the loop and program
+                        else:
+                            print("The file does not contain the 'Αξία' column. Please try again.")
+                            break  # Break out of this loop and start from file selection again.
                 else:
                     print("Invalid file name, please try again.")
         elif action == '2':
@@ -220,3 +224,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
