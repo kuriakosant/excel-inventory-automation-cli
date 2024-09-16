@@ -93,6 +93,7 @@ def modify_values(df, min_val, max_val, case):
             (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
         ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
     
+
     elif case == 2:  # Reduce per-unit value of product
         percentage = get_percentage_input("Please input the percentage to reduce the per-unit value of the products: ")
         rounding_choice = get_rounding_choice()
@@ -107,20 +108,29 @@ def modify_values(df, min_val, max_val, case):
             (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
         ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
 
+
     elif case == 3:  # Reduce total value of product (both quantity and unit price)
         percentage = get_percentage_input("Please input the percentage to reduce both the quantity and per-unit price of the products: ")
         rounding_choice = get_rounding_choice()
-        
-        # Reduce both 'Ποσ.1' (Column F) and 'Τιμή κόστους' (Column I) by the given percentage and round accordingly
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), ['Ποσ.1', 'Τιμή κόστους']] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), ['Ποσ.1', 'Τιμή κόστους']
-        ].apply(lambda row: (round_value(row['Ποσ.1'] * (1 - percentage / 100), rounding_choice),
-                             round_value(row['Τιμή κόστους'] * (1 - percentage / 100), rounding_choice)), axis=1).apply(pd.Series)
 
-        # Recalculate 'Αξία' as 'Ποσ.1' * 'Τιμή κόστους'
+        # First, reduce the columns F (Ποσ.1), H (Ποσ.2), and I (Τιμή κόστους)
+        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.1'] = df.loc[
+            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.1'
+        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
+
+        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.2'] = df.loc[
+            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.2'
+        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
+
+        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'] = df.loc[
+            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'
+        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
+
+        # Now, recalculate column J (Αξία) as F * I
         df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Αξία'] = df.loc[
             (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
         ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
+
 
     # Recalculate the sums of 'Ποσ.1', 'Ποσ.2', 'Τιμή κόστους', and 'Αξία' excluding the last row
     total_pos1 = df.iloc[:-1]['Ποσ.1'].sum()
@@ -195,10 +205,21 @@ def main():
                         print(f"Min: {min_value}, Max: {max_value}")
                         
                         modification_choice = input(
+                            "                                                                                                                                      \n"
+                            "*In all cases, the affected rows cells in Column J(Αξια) will be recalculated with F*I=J (Ποσ.1 * Τιμη Κοστους= Αξια)*\n"
+                            "*Also , Sums of columns F H I and J will be recalculated in the last row of the document*\n"
+                            "                                                                                                                                      \n"
                             "Please select your next action:\n"
-                            " 1. Reduce quantity of product (change the value of all F columns in the selected rows by a percentage)\n"
-                            " 2. Reduce per-unit value of product (change the value of all I columns in the selected rows by a percentage)\n"
-                            " 3. Reduce total value of product (change the value of all F and I columns in the selected rows by a percentage,)\nthis will also recalculate the J(αξια) value in all affected rows:\n "
+                            "                                                                                                                                      \n"
+                            " 1. Reduce quantity of products\n"
+                            "    (decrease the value of all cells in F(Ποσ.1) and H(Ποσ.2) columns in the selected rows by a percentage)\n"
+                            "                                                                                                                                      \n"
+                            " 2. Reduce per-unit value of products\n"
+                            "    (decrease the value of all cells in I(Τιμη Κοστους) columns in the selected rows by a percentage)\n"
+                            "                                                                                                                                      \n"
+                            " 3. Reduce both quantity and per unit value of products\n"
+                            "    (decrease the value of all cells in F(Ποσ.1), H(Ποσ.2) and I(Τιμη κοστους) columns in the selected rows by a percentage)\n"
+                            "                                                                                                                                      \n"
                             " Selection(1-3): "
                         )
 
