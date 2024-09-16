@@ -171,10 +171,10 @@ def copy_formatting(original_file, new_file):
 
 # CLI for the Excel Modifier Tool
 def main():
-    print("EXCEL FILE MODIFIER (V1)\n"
-          "                        ")
+    print("EXCEL INVENTORY FILE MODIFIER (V1) (c) 2024 KYRIAKOS ANTONIADIS \n"
+          "                                                      \n")
     print("Program rules:\n"
-          "                ")
+          "               \n") 
     print("IMPORTANT: For the program to work the files you input must have a strict format:\n"
           "Your list of products must begin on Row 9 (so Row 9 should always contain the 1st product)\n"
           "The cell in Column F of row 8 must contain the value 'Ποσ.1'\n" 
