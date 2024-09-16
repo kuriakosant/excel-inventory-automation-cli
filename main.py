@@ -77,16 +77,20 @@ def modify_values(df, min_val, max_val, case):
     selected_rows = product_df[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val)]
     print(f"Selected {len(selected_rows)} rows in the range Min: {min_val}, Max: {max_val}")
 
-    if case == 1:  # Reduce quantity of product
+    if case == 1:  # Reduce quantity of product (Apply same logic to both columns F and H)
         percentage = get_percentage_input("Please input the percentage to reduce the quantity of the products: ")
         rounding_choice = get_rounding_choice()
-        
-        # Reduce 'Ποσ.1' by the given percentage and round accordingly
+
+        # Reduce 'Ποσ.1' (column F) and 'Ποσ.2' (column H) by the given percentage and round accordingly
         product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Ποσ.1'] = product_df.loc[
             (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Ποσ.1'
         ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice)).astype(float)
 
-        # Recalculate 'Αξία' as 'Ποσ.1' * 'Τιμή κόστους'
+        product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Ποσ.2'] = product_df.loc[
+            (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Ποσ.2'
+        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice)).astype(float)
+
+        # Recalculate 'Αξία' as 'Ποσ.1' * 'Τιμή κόστους' for all affected rows
         product_df.loc[(product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val), 'Αξία'] = product_df.loc[
             (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val)
         ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
@@ -120,17 +124,20 @@ def modify_values(df, min_val, max_val, case):
             (product_df['Αξία'] >= min_val) & (product_df['Αξία'] <= max_val)
         ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
 
-    # Recalculate the sums of 'Ποσ.1', 'Τιμή κόστους', and 'Αξία' (ignoring the last row)
+    # Recalculate the sums of 'Ποσ.1', 'Ποσ.2', 'Τιμή κόστους', and 'Αξία' (ignoring the last row)
     total_pos1 = product_df['Ποσ.1'].sum()
+    total_pos2 = product_df['Ποσ.2'].sum()  # Summing column H as requested
     total_cost = product_df['Τιμή κόστους'].sum()
     total_value = product_df['Αξία'].sum()
 
     # Update the last row with the recalculated sums
     df.loc[len(df)-1, 'Ποσ.1'] = total_pos1
+    df.loc[len(df)-1, 'Ποσ.2'] = total_pos2  # Writing the sum of column H
     df.loc[len(df)-1, 'Τιμή κόστους'] = total_cost
     df.loc[len(df)-1, 'Αξία'] = total_value
     
     return df
+
 
 # Function to copy formatting from the original file
 def copy_formatting(original_file, new_file):
