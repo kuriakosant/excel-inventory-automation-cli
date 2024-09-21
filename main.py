@@ -253,13 +253,13 @@ def list_files_in_directory():
                             print("The file does not contain the 'Αξία' column. Please try again.")
                             break  # Break out of this loop and start from file selection again.
                     elif next_action == '2':  # Check if the user wants to exit
-                        print("Exiting the program.")
+                        print(Fore.RED + "Exiting..." + Style.RESET_ALL)
                         exit()  # Exit the program
                 else:
                     print("Invalid file name, please try again.")
         else:  # Handle exit action
             if action == '2':  # If action 2 (Exit) is selected
-                print("Exiting the program.")
+                print(Fore.RED + "Exiting..." + Style.RESET_ALL)
                 exit()
 
 # CLI for the Excel Modifier Tool
@@ -336,6 +336,9 @@ def main():
                         else:
                             print("The file does not contain the 'Αξία' column. Please try again.")
                             break  # Break out of this loop and start from file selection again.
+                    elif next_action == '2':  # Check if the user wants to exit
+                        print(Fore.RED + "Exiting..." + Style.RESET_ALL)
+                        exit()  # Exit the program
                 else:
                     print("Invalid file name, please try again.")
         elif action == '2':
