@@ -183,6 +183,14 @@ def copy_formatting(original_file, new_file):
 
     new_wb.save(new_file)
 
+# Function to list all files in the current working directory
+def list_files_in_directory():
+    print("\nFiles in the current directory:")
+    for filename in os.listdir('.'):
+        if os.path.isfile(filename):
+            print(f"{filename} - Size: {os.path.getsize(filename)} bytes")
+    print()  # Add a newline for better readability
+
 # CLI for the Excel Modifier Tool
 def main():
     print("EXCEL INVENTORY FILE MODIFIER (V1) (c) 2024 KYRIAKOS ANTONIADIS \n"
@@ -203,7 +211,7 @@ def main():
           "                ")
     
     while True:
-        action = input("Please select your next action:\n 1. Choose a file\n 2. Exit:\n Selection(1/2): ")
+        action = input("Please select your next action:\n 1. Choose a file\n 2. List all files in working directory\n 3. Exit:\n Selection(1-3): ")
         if action == '1':
             while True:
                 filename = input("Please place your file in the same directory as this script and give the full name of your file (e.g., filename.xlsx): ")
@@ -260,10 +268,12 @@ def main():
                 else:
                     print("Invalid file name, please try again.")
         elif action == '2':
+            list_files_in_directory()  # Call the function to list files
+        elif action == '3':
             print("Exiting...")
             break
         else:
-            print("Please select an applicable action (1, 2).")
+            print("Please select an applicable action (1, 2, 3).")
 
 if __name__ == "__main__":
     main()
