@@ -15,6 +15,10 @@ import openpyxl
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 import os
+from colorama import init, Fore, Style
+
+# Initialize colorama
+init(autoreset=True)
 
 # Helper function to check if a file exists
 def file_exists(filename):
@@ -188,37 +192,104 @@ def list_files_in_directory():
     print("\nFiles in the current directory:")
     for filename in os.listdir('.'):
         if os.path.isfile(filename):
-            print(f"{filename} - Size: {os.path.getsize(filename)} bytes")
+            size_kb = os.path.getsize(filename) / 1024  # Convert bytes to kilobytes
+            print(f"{filename} - Size: {size_kb:.2f} KB")  # Display size in KB with 2 decimal places
     print()  # Add a newline for better readability
+
+    # New CLI for selecting the next action after listing files
+    while True:
+        action = input(Fore.YELLOW + "Please select your next action:\n 1. Choose a file\n 2. Exit:\n Selection(1-2): " + Style.RESET_ALL)
+        if action == '1':
+            # Directly call the file selection logic
+            while True:
+                filename = input("Please place your file in the same directory as this script and give the full name of your file (e.g., filename.xlsx): ")
+                if file_exists(filename):
+                    size_kb = os.path.getsize(filename) / 1024  # Convert bytes to kilobytes
+                    print(f"The file you selected is: {filename} ({size_kb:.2f} KB)")
+                    next_action = input("Please select your next action:\n 1. Modify values\n 2. Exit:\n Selection(1-2): ")
+                    if next_action == '1':
+                        print("You will now have to specify what rows you want to modify,\nthis is done by providing a min and a max (a range of product value) from the columns J\n")
+                        min_value = get_float_input("Please input your min value (press enter for 0): ", 0.0)
+                        max_value = get_float_input("Please input your max value: ")
+                        print(f"Min: {min_value}, Max: {max_value}")
+                        
+                        modification_choice = input(
+                            "                                                                                                                                      \n"
+                            "*In all cases, the affected rows cells in Column J(Αξια) will be recalculated with F*I=J (Ποσ.1 * Τιμη Κοστους= Αξια)*\n"
+                            "*Also , Sums of columns F H I and J will be recalculated in the last row of the document*\n"
+                            "                                                                                                                                      \n"
+                            "Please select your next action:\n"
+                            "                                                                                                                                      \n"
+                            " 1. Reduce quantity of products\n"
+                            "    (decrease the value of all cells in F(Ποσ.1) and H(Ποσ.2) columns in the selected rows by a percentage)\n"
+                            "                                                                                                                                      \n"
+                            " 2. Reduce per-unit value of products\n"
+                            "    (decrease the value of all cells in I(Τιμη Κοστους) columns in the selected rows by a percentage)\n"
+                            "                                                                                                                                      \n"
+                            " 3. Reduce both quantity and per unit value of products\n"
+                            "    (decrease the value of all cells in F(Ποσ.1), H(Ποσ.2) and I(Τιμη κοστους) columns in the selected rows by a percentage)\n"
+                            "                                                                                                                                      \n"
+                            " Selection(1-3): "
+                        )
+
+                        modified_df = modify_values(df, min_value, max_value, int(modification_choice))
+                        
+                        if modified_df is not None:  # If the column 'Αξία' exists and modifications are made
+                            # Get new file name
+                            new_filename = input("Please select a name for your new file (just the file name, not including file type): ")
+                            modified_df.to_excel(f"{new_filename}.xlsx", index=False)
+
+                            # Copy the formatting from the original file to the new file
+                            copy_formatting(filename, f"{new_filename}.xlsx")
+                            
+                            print(f"Your new file has been created: {new_filename}.xlsx with original formatting.")
+                            
+                            # Ask if the user wants to convert another file
+                            another_file = input("Do you want to convert another file? (y/n): ").lower()
+                            if another_file == 'n':
+                                print("Exiting...")
+                                return  # Exit the loop and program
+                        else:
+                            print("The file does not contain the 'Αξία' column. Please try again.")
+                            break  # Break out of this loop and start from file selection again.
+                    elif next_action == '2':  # Check if the user wants to exit
+                        print("Exiting the program.")
+                        exit()  # Exit the program
+                else:
+                    print("Invalid file name, please try again.")
+        else:  # Handle exit action
+            if action == '2':  # If action 2 (Exit) is selected
+                print("Exiting the program.")
+                exit()
 
 # CLI for the Excel Modifier Tool
 def main():
-    print("EXCEL INVENTORY FILE MODIFIER (V1) (c) 2024 KYRIAKOS ANTONIADIS \n"
-          "                                                      \n")
-    print("Program rules:\n"
-          "               \n") 
+    print(Fore.CYAN + Style.BRIGHT + "EXCEL INVENTORY FILE MODIFIER (V1) (c) 2024 KYRIAKOS ANTONIADIS \n" + Style.RESET_ALL
+          + "                                                      \n")
+    print(Fore.YELLOW + "Program rules:\n" + Style.RESET_ALL
+          + "               \n") 
     print("IMPORTANT: For the program to work the files you input must have a strict format:\n"
-          "Your list of products must begin on Row 9 (so Row 9 should always contain the 1st product)\n"
-          "The cell in Column F of row 8 must contain the value 'Ποσ.1'\n" 
-          "The cell in Column I of row 8 must contain the value 'Ποσ.2'\n" 
-          "The cell in Column J of row 8 must contain the value 'Αξια'\n" 
-          "The program will only accept files that have this format.\n"
-          "1. The program will always ignore the first 8 rows and start implementing the row range selection from row 9 and on.\n" 
-          "2. The program will recalculate the sum of columns F, I, and J in all iterations\n"
-          "The program will always ignore the content of the files final row\n"
-          "if your final row contains a product that product will not be included in any calculations\n"
-          "(this prevents the sum calculation from including the previous sum value)\n"
-          "                ")
+          + Fore.YELLOW + "FILE TYPE: The program only accepts .xlsx files\n" + Style.RESET_ALL
+          + "Your list of products must begin on Row 9 (so Row 9 should always contain the 1st product)\n"
+          + "The cell in " + Fore.YELLOW + "Column F of row 8" + Style.RESET_ALL + " must contain the value " + Fore.YELLOW + "'Ποσ.1'" + Style.RESET_ALL + "\n" 
+          + "The cell in " + Fore.YELLOW + "Column I of row 8" + Style.RESET_ALL + " must contain the value " + Fore.YELLOW + "'Ποσ.2'" + Style.RESET_ALL + "\n" 
+          + "The cell in " + Fore.YELLOW + "Column J of row 8" + Style.RESET_ALL + " must contain the value " + Fore.YELLOW + "'Αξια'" + Style.RESET_ALL + "\n" 
+          + "The program will only accept files that have this format.\n"
+          + Fore.YELLOW + "1. The program will always ignore the first 8 rows" + Style.RESET_ALL + " and start implementing the row range selection from row 9 and on.\n" 
+          + "2. The program will recalculate the sum of columns F, I, and J in all iterations\n"
+          + "The program will always ignore the content of the files final row\n"
+          + "if your final row contains a product that product will not be included in any calculations\n"
+          + "(this prevents the sum calculation from including the previous sum value)\n"
+          + "                ")
     
     while True:
-        action = input("Please select your next action:\n 1. Choose a file\n 2. List all files in working directory\n 3. Exit:\n Selection(1-3): ")
+        action = input(Fore.YELLOW + "Please select your next action:\n 1. Choose a file\n 2. List all files in working directory\n 3. Exit:\n Selection(1-3): " + Style.RESET_ALL)
         if action == '1':
             while True:
                 filename = input("Please place your file in the same directory as this script and give the full name of your file (e.g., filename.xlsx): ")
                 if file_exists(filename):
-                    df = pd.read_excel(filename, skiprows=6)  # Ignore the first 6 rows, starting from row 7
-                    
-                    print(f"The file you selected is: {filename} ({os.path.getsize(filename)} bytes)")
+                    size_kb = os.path.getsize(filename) / 1024  # Convert bytes to kilobytes
+                    print(f"The file you selected is: {filename} ({size_kb:.2f} KB)")
                     next_action = input("Please select your next action:\n 1. Modify values\n 2. Exit:\n Selection(1-2): ")
                     if next_action == '1':
                         print("You will now have to specify what rows you want to modify,\nthis is done by providing a min and a max (a range of product value) from the columns J\n")
@@ -270,10 +341,10 @@ def main():
         elif action == '2':
             list_files_in_directory()  # Call the function to list files
         elif action == '3':
-            print("Exiting...")
+            print(Fore.RED + "Exiting..." + Style.RESET_ALL)
             break
         else:
-            print("Please select an applicable action (1, 2, 3).")
+            print(Fore.RED + "Please select a valid action (1, 2, or 3)." + Style.RESET_ALL)
 
 if __name__ == "__main__":
     main()
