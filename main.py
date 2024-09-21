@@ -72,14 +72,22 @@ def get_rounding_choice():
 def round_value(value, rounding_choice):
     if pd.isna(value):  # Check for NaN values
         return value  # Return NaN as is
-    if rounding_choice == 1:
-        return int(value)
-    elif rounding_choice == 2:
-        return int(value) + (1 if value % 1 != 0 else 0)
-    elif rounding_choice == 3:
-        return round(value, 1)
-    elif rounding_choice == 4:
-        return round(value, 2)
+    if value < 1:
+        if rounding_choice == 1:  # Round down
+            return value  # Keep the original value if it's less than 1
+        elif rounding_choice == 2:  # Round up
+            return 1  # Round up to 1 if it's less than 1
+        else:  # For decimal rounding (choices 3 and 4)
+            return max(value, 0.01)  # Ensure the value is at least 0.01
+    else:
+        if rounding_choice == 1:
+            return max(int(value), 1)  # Round down, but not below 1
+        elif rounding_choice == 2:
+            return int(value) + 1  # Round up
+        elif rounding_choice == 3:
+            return max(round(value, 1), 0.1)  # Round to 1 decimal, minimum 0.1
+        elif rounding_choice == 4:
+            return max(round(value, 2), 0.01)  # Round to 2 decimals, minimum 0.01
 
 # Function to modify values based on the case
 def modify_values(df, min_val, max_val, case):
@@ -96,36 +104,48 @@ def modify_values(df, min_val, max_val, case):
         percentage = get_percentage_input("Please input the percentage to reduce the quantity of the products: ")
         rounding_choice = get_rounding_choice()
         
-        # Reduce 'Ποσ.1' (Column F) by the given percentage and round accordingly
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.1'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.1'
-        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
+        # Modify 'Ποσ.1' (Column F) and 'Ποσ.2' (Column H)
+        for col in ['Ποσ.1', 'Ποσ.2']:
+            df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col] = df.loc[
+                (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col
+            ].apply(lambda x: max(x * (1 - percentage / 100), 0.01))  # Ensure minimum value of 0.01
 
-        # Reduce 'Ποσ.2' (Column H) by the given percentage and round accordingly
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.2'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.2'
-        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
-
-        # Recalculate 'Αξία' (Column J) as 'Ποσ.1' * 'Τιμή κόστους' (F * I = J)
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Αξία'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
-        ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
-    
+            # Apply rounding based on user choice
+            if rounding_choice in [1, 2]:  # Integer rounding
+                df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col] = df.loc[
+                    (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col
+                ].apply(lambda x: max(round(x), 1) if x >= 1 else x)
+            elif rounding_choice == 3:  # 1 decimal point
+                df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col] = df.loc[
+                    (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col
+                ].apply(lambda x: round(x, 1))
+            elif rounding_choice == 4:  # 2 decimal points
+                df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col] = df.loc[
+                    (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col
+                ].apply(lambda x: round(x, 2))
 
     elif case == 2:  # Reduce per-unit value of product
         percentage = get_percentage_input("Please input the percentage to reduce the per-unit value of the products: ")
         rounding_choice = get_rounding_choice()
         
-        # Reduce 'Τιμή κόστους' (Column I) by the given percentage and round accordingly
+        # Modify 'Τιμή κόστους' (Column I)
         df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'] = df.loc[
             (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'
-        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
+        ].apply(lambda x: max(x * (1 - percentage / 100), 0.01))  # Ensure minimum value of 0.01
 
-        # Recalculate 'Αξία' as 'Ποσ.1' * 'Τιμή κόστους'
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Αξία'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
-        ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
-
+        # Apply rounding based on user choice
+        if rounding_choice in [1, 2]:  # Integer rounding
+            df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'] = df.loc[
+                (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'
+            ].apply(lambda x: max(round(x), 1) if x >= 1 else x)
+        elif rounding_choice == 3:  # 1 decimal point
+            df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'] = df.loc[
+                (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'
+            ].apply(lambda x: round(x, 1))
+        elif rounding_choice == 4:  # 2 decimal points
+            df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'] = df.loc[
+                (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'
+            ].apply(lambda x: round(x, 2))
 
     elif case == 3:  # Reduce total value of product (both quantity and unit price)
         percentage = get_percentage_input("Please input the percentage to reduce both the quantity and per-unit price of the products: ")
@@ -134,21 +154,35 @@ def modify_values(df, min_val, max_val, case):
         # First, reduce the columns F (Ποσ.1), H (Ποσ.2), and I (Τιμή κόστους)
         df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.1'] = df.loc[
             (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.1'
-        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
+        ].apply(lambda x: max(x * (1 - percentage / 100), 0.01))  # Ensure minimum value of 0.01
 
         df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.2'] = df.loc[
             (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Ποσ.2'
-        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
+        ].apply(lambda x: max(x * (1 - percentage / 100), 0.01))  # Ensure minimum value of 0.01
 
         df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'] = df.loc[
             (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Τιμή κόστους'
-        ].apply(lambda x: round_value(x * (1 - percentage / 100), rounding_choice))
+        ].apply(lambda x: max(x * (1 - percentage / 100), 0.01))  # Ensure minimum value of 0.01
 
-        # Now, recalculate column J (Αξία) as F * I
-        df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Αξία'] = df.loc[
-            (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
-        ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
+        # Apply rounding based on user choice
+        for col in ['Ποσ.1', 'Ποσ.2', 'Τιμή κόστους']:
+            if rounding_choice in [1, 2]:  # Integer rounding
+                df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col] = df.loc[
+                    (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col
+                ].apply(lambda x: max(round(x), 1) if x >= 1 else x)
+            elif rounding_choice == 3:  # 1 decimal point
+                df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col] = df.loc[
+                    (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col
+                ].apply(lambda x: round(x, 1))
+            elif rounding_choice == 4:  # 2 decimal points
+                df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col] = df.loc[
+                    (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), col
+                ].apply(lambda x: round(x, 2))
 
+    # Recalculate 'Αξία' (Column J) as 'Ποσ.1' * 'Τιμή κόστους' (F * I = J)
+    df.loc[(df['Αξία'] >= min_val) & (df['Αξία'] <= max_val), 'Αξία'] = df.loc[
+        (df['Αξία'] >= min_val) & (df['Αξία'] <= max_val)
+    ].apply(lambda row: row['Ποσ.1'] * row['Τιμή κόστους'], axis=1)
 
     # Recalculate the sums of 'Ποσ.1', 'Ποσ.2', 'Τιμή κόστους', and 'Αξία' excluding the last row
     total_pos1 = df.iloc[:-1]['Ποσ.1'].sum()
@@ -206,6 +240,10 @@ def list_files_in_directory():
                 if file_exists(filename):
                     size_kb = os.path.getsize(filename) / 1024  # Convert bytes to kilobytes
                     print(f"The file you selected is: {filename} ({size_kb:.2f} KB)")
+                    
+                    # Read the Excel file into a DataFrame
+                    df = pd.read_excel(filename, skiprows=8)  # Skip the first 8 rows as per your requirements
+
                     next_action = input("Please select your next action:\n 1. Modify values\n 2. Exit:\n Selection(1-2): ")
                     if next_action == '1':
                         print("You will now have to specify what rows you want to modify,\nthis is done by providing a min and a max (a range of product value) from the columns J\n")
@@ -290,6 +328,10 @@ def main():
                 if file_exists(filename):
                     size_kb = os.path.getsize(filename) / 1024  # Convert bytes to kilobytes
                     print(f"The file you selected is: {filename} ({size_kb:.2f} KB)")
+                    
+                    # Read the Excel file into a DataFrame
+                    df = pd.read_excel(filename, skiprows=8)  # Skip the first 8 rows as per your requirements
+
                     next_action = input("Please select your next action:\n 1. Modify values\n 2. Exit:\n Selection(1-2): ")
                     if next_action == '1':
                         print("You will now have to specify what rows you want to modify,\nthis is done by providing a min and a max (a range of product value) from the columns J\n")
@@ -331,7 +373,7 @@ def main():
                             # Ask if the user wants to convert another file
                             another_file = input("Do you want to convert another file? (y/n): ").lower()
                             if another_file == 'n':
-                                print("Exiting...")
+                                print(Fore.RED + "Exiting..." + Style.RESET_ALL)
                                 return  # Exit the loop and program
                         else:
                             print("The file does not contain the 'Αξία' column. Please try again.")
