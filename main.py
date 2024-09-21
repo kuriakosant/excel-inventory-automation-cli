@@ -54,6 +54,8 @@ def get_rounding_choice():
 
 # Function to round a number based on user choice
 def round_value(value, rounding_choice):
+    if pd.isna(value):  # Check for NaN values
+        return value  # Return NaN as is
     if rounding_choice == 1:
         return int(value)
     elif rounding_choice == 2:
