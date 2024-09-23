@@ -148,6 +148,7 @@ The rounding behavior has been carefully implemented to handle small values:
   - Decimal rounding (options 3 and 4) rounds to the specified number of decimal places.
 
   The special case of rounding up to 1 only applies when the value is less than 1. This is to prevent very small quantities from disappearing entirely.
+  For example, a value of 0.1 rounded up to the nearest integer is 1, not 0, even if the rounding was to the nearest integer.
 
 In all cases, the program ensures that no value becomes zero due to rounding. This preserves small quantities and values in the inventory.
 
