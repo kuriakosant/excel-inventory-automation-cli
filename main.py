@@ -1,3 +1,15 @@
+'''
+    EXCEL INVENTORY AUTOMATION TOOL
+               CLI
+             V-1.0.0
+
+Author : KYRIAKOS ANTONIADIS
+mail : kuriakosant2003@gmail.com    
+github : https://github.com/kuriakosant
+linkedin : https://www.linkedin.com/in/kyriakos-antoniadis-288444326/
+
+'''
+
 import pandas as pd
 import openpyxl
 from openpyxl import load_workbook
